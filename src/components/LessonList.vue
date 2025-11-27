@@ -2,12 +2,12 @@
   <div>
     <h2>Available Lessons</h2>
 
-    <!--Cart toggle button -->
-<button :disabled="cart.length === 0" @click="showCart = !showCart">
-  {{ showCart ? 'Back to Lessons' : 'View Cart' }}
-</button>
+    <!-- Cart toggle button -->
+    <button :disabled="cart.length === 0" @click="showCart = !showCart">
+      {{ showCart ? 'Back to Lessons' : 'View Cart' }}
+    </button>
 
-    <!--Sorting controls -->
+    <!-- Sorting controls -->
     <label for="sortAttribute">Sort by:</label>
     <select v-model="sortAttribute" id="sortAttribute">
       <option value="subject">Subject</option>
@@ -21,51 +21,50 @@
       Descending
     </label>
 
-    <!--Lesson cards -->
+    <!-- Lesson cards -->
     <div v-if="!showCart">
-  <div v-for="lesson in sortedLessons" :key="lesson._id" class="lesson-card">
-    <h3>{{ lesson.subject }}</h3>
-    <p>Location: {{ lesson.location }}</p>
-    <p>Price: £{{ lesson.price }}</p>
-    <p>Spaces: {{ lesson.spaces }}</p>
-    <i class="fas fa-book fa-2x"></i>
+      <div v-for="lesson in sortedLessons" :key="lesson._id" class="lesson-card">
+        <h3>{{ lesson.subject }}</h3>
+        <p>Location: {{ lesson.location }}</p>
+        <p>Price: £{{ lesson.price }}</p>
+        <p>Spaces: {{ lesson.spaces }}</p>
+        <i class="fas fa-book fa-2x"></i>
 
-   <button
-  v-bind:disabled="lesson.spaces === 0"
-  v-on:click="addToCart(lesson)"
->
-  Add to Cart
-</button>
+        <button :disabled="lesson.spaces === 0" @click="addToCart(lesson)">
+          Add to Cart
+        </button>
+      </div>
+    </div>
+
+    <!-- Cart view -->
+    <div v-else>
+      <h2>Shopping Cart</h2>
+      <div v-for="(lesson, index) in cart" :key="index" class="lesson-card">
+        <h3>{{ lesson.subject }}</h3>
+        <p>Location: {{ lesson.location }}</p>
+        <p>Price: £{{ lesson.price }}</p>
+        <button @click="removeFromCart(index)">Remove</button>
+      </div>
+
+      <!-- Checkout form -->
+      <h3>Checkout</h3>
+      <form @submit.prevent="submitOrder">
+        <label>
+          Name:
+          <input v-model="checkoutName" type="text" required />
+        </label>
+        <br />
+        <label>
+          Phone:
+          <input v-model="checkoutPhone" type="text" required />
+        </label>
+        <br />
+        <button :disabled="!isFormValid">Submit Order</button>
+      </form>
+
+      <p v-if="orderSubmitted">Order submitted successfully!</p>
+    </div>
   </div>
-</div>
-
-<!--Cart view -->
-<div v-else>
-  <h2>Shopping Cart</h2>
-  <div v-for="(lesson, index) in cart" :key="index" class="lesson-card">
-    <h3>{{ lesson.subject }}</h3>
-    <p>Location: {{ lesson.location }}</p>
-    <p>Price: £{{ lesson.price }}</p>
-    <button @click="removeFromCart(index)">Remove</button>
-    <h3>Checkout</h3>
-<form @submit.prevent="submitOrder">
-  <label>
-    Name:
-    <input v-model="checkoutName" type="text" required />
-  </label>
-  <br />
-  <label>
-    Phone:
-    <input v-model="checkoutPhone" type="text" required />
-  </label>
-  <br />
-  <button :disabled="!isFormValid">Submit Order</button>
-</form>
-
-<p v-if="orderSubmitted">✅ Order submitted successfully!</p>
-  </div> 
-</div> 
-</div> 
 </template>
 
 <script>
@@ -75,10 +74,10 @@ export default {
       sortAttribute: 'subject',
       sortDescending: false,
       showCart: false,
-      checkoutName: '',         
-      checkoutPhone: '',        
-      orderSubmitted: false, 
-      lessons: [],   // ✅ start empty, will be filled by fetch
+      checkoutName: '',
+      checkoutPhone: '',
+      orderSubmitted: false,
+      lessons: [],
       cart: []
     };
   },
@@ -107,27 +106,21 @@ export default {
   },
 
   methods: {
-    addToCart(lesson) {
-      if (lesson.spaces > 0) {
-        this.cart.push({ ...lesson });
-        console.log('Added to cart:', lesson.subject);
-      }
-    },
+    async loadLessons() {
+  try {
+    const res = await fetch('https://lesson-backend.onrender.com/lessons');
+    const data = await res.json();
+    this.lessons = data;
+  } catch (err) {
+    console.error('Failed to fetch lessons:', err);
+  }
+},
 
-    removeFromCart(index) {
-      const removedLesson = this.cart[index];
-      const original = this.lessons.find(l => l._id === removedLesson._id);
-      if (original) {
-        original.spaces += 1;
-      }
-      this.cart.splice(index, 1);
-    },
-
-    async submitOrder() {   
+async submitOrder() {
   if (this.isFormValid) {
     try {
       // 1. Send order to backend
-      const orderResponse = await fetch('http://localhost:3030/orders', {
+      await fetch('https://lesson-backend.onrender.com/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -137,48 +130,36 @@ export default {
         })
       });
 
-      const orderData = await orderResponse.json();
-      console.log('Order saved:', orderData);
-
-      // 2. Decrement spaces for each lesson in cart
+      // 2. Update spaces for each lesson
       for (let item of this.cart) {
-        await fetch(`http://localhost:3030/lesson/${item._id}`, {
+        await fetch(`https://lesson-backend.onrender.com/lesson/${item._id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({})
         });
       }
 
-      // 3. Clear cart + reset form
+      // 3. Reset cart + form
       this.cart = [];
       this.checkoutName = '';
       this.checkoutPhone = '';
       this.orderSubmitted = true;
       this.showCart = false;
 
-      // 4. Refresh lessons from backend so spaces update in UI
-      await fetch('http://localhost:3030/lessons')
-        .then(res => res.json())
-        .then(data => {
-          this.lessons = data;
-        });
+      // 4. Refresh lessons
+      await this.loadLessons();
 
-      alert('✅ Your order has been placed successfully!');
+      alert('Your order has been placed successfully!');
     } catch (err) {
       console.error('Checkout failed:', err);
-      alert('❌ Something went wrong during checkout.');
+      alert('Something went wrong during checkout.');
     }
   }
 }
   },
 
-  mounted() {   // ✅ lifecycle hook at root level
-    fetch('http://localhost:3030/lessons')
-      .then(res => res.json())
-      .then(data => {
-        this.lessons = data;
-      })
-      .catch(err => console.error('Failed to fetch lessons:', err));
+  mounted() {
+    this.loadLessons();
   }
 };
 </script>
