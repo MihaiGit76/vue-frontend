@@ -1,11 +1,8 @@
-<<<<<<< HEAD
-import { createApp } from 'vue';
-import App from './App.vue';
-import '@fortawesome/fontawesome-free/css/all.css';
-createApp(App).mount('#app');
-=======
-import { createApp } from 'vue'
+import Vue from 'vue'
 import App from './App.vue'
 
-createApp(App).mount('#app')
->>>>>>> 23716fe (Initial commit for Vue frontend)
+Vue.config.productionTip = false
+
+new Vue({
+  render: h => h(App),
+}).$mount('#app')
