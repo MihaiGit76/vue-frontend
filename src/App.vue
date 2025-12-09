@@ -1,33 +1,18 @@
 <template>
-<<<<<<< HEAD
   <div id="app">
     <LessonList />
   </div>
 </template>
 
 <script>
-import LessonList from './components/LessonList.vue';
-=======
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
-</template>
-
-<script>
-import HelloWorld from './components/HelloWorld.vue'
->>>>>>> 23716fe (Initial commit for Vue frontend)
+import LessonList from "./components/LessonList.vue";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
-<<<<<<< HEAD
     LessonList
   }
 };
-=======
-    HelloWorld
-  }
-}
->>>>>>> 23716fe (Initial commit for Vue frontend)
 </script>
 
 <style>
