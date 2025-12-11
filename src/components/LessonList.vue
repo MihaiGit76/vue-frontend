@@ -115,7 +115,7 @@ export default {
   },
 
   methods: {
-    async loadLessons() {
+    async loadLessons() {                   //The function loads the lessons from Mondodb database and displays them on the main screen
       const res = await fetch(
         "https://express-backend-7apr.onrender.com/lessons"
       );
